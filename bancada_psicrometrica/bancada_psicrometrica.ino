@@ -9,6 +9,8 @@
 #define BARRAMENTO 4 // O fio de dados está conectado A GPIO 4
 #define TIPODHT DHT22 // Define o sensor que será utilizado
 #define LEDonBoard 2  // Define o LED da placa
+#define D3 3
+#define D4 4
 
 const char* ssid = "Bancada Psicrométrica"; // Nome da rede WiFi
 const char* password = "12345678"; // Senha da rede WiFi
@@ -135,15 +137,22 @@ void setup(){
   server.on("/temperaturec2", readDSTemperatureC2); // Solicita o readDSTemperatureC2
   server.on("/temperaturec3", readDSTemperatureC3); // Solicita o readDSTemperatureC3
   server.on("/temperaturec4", readDSTemperatureC4); // Solicita o readDSTemperatureC4
+  
 
   server.begin(); // Inicia o WebServer
   Serial.println("Servidor HTTP iniciado.");
   Serial.println(WiFi.softAPIP());
+  
 
 }
-
+void leitura_serial()
+{
+  Serial.print("Sensor 1 - umidade: ");
+  Serial.println(dht.readHumidity());
+  Serial.print("Sensor 2 - umidade: ");
+  Serial.println(dht2.readHumidity());
+  delay(1000);
+}
 void loop(){ 
   server.handleClient();  // Solicitações do usuário 
-
-}
-
+  }
