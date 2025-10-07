@@ -5,12 +5,12 @@
 #include <OneWire.h> // Biblioteca do DS18B20
 #include <DallasTemperature.h> // Biblioteca do DS18B20
 #include "PageIndex.h" // Inclui o conteúdo da página da Web da interface do usuário
-
+#include <ArduinoJson.h> 
 #define BARRAMENTO 4 // O fio de dados está conectado A GPIO 4
 #define TIPODHT DHT22 // Define o sensor que será utilizado
 #define LEDonBoard 2  // Define o LED da placa
-#define D3 3
-#define D4 4
+#define D3 0
+#define D4 2
 
 const char* ssid = "Bancada Psicrométrica"; // Nome da rede WiFi
 const char* password = "12345678"; // Senha da rede WiFi
@@ -45,8 +45,8 @@ void handleDHT221Temperature() {
 void handleDHT222Temperature() {
   float t = dht2.readTemperature();  // Le a temperatura em Celsius
   String ValorTemperatura2 = String(t);
- 
  // Envia o valor da temperatura apenas quando é solicitado
+ 
   server.send(200, "text/plane", ValorTemperatura2); 
 }
 
@@ -54,11 +54,31 @@ void handleDHT222Temperature() {
 void handleDHT221Humidity() {
   float h = dht.readHumidity();
   String ValorUmidade1 = String(h);
- 
+  //String jsonResponse;
+  //DynamicJsonDocument doc(2048);
+  //doc["umidade"] = h;
+  //serializeJson(doc, jsonResponse);
  // Envia o valor da temperatura apenas quando é solicitado
   server.send(200, "text/plane", ValorUmidade1); 
 
 }
+void handleapi()
+{
+  String json;
+  DynamicJsonDocument doc(2048);
+  doc["umidade1"] = dht.readHumidity();
+  doc["umidade2"] = dht2.readHumidity();
+  doc["tempdht"] = dht.readTemperature();
+  doc["tempdht2"] = dht2.readTemperature();
+  sensors.requestTemperatures();
+  doc["Temperatura1"] = sensors.getTempCByIndex(0);
+  doc["Temperatura2"] = sensors.getTempCByIndex(1);
+  doc["Temperatura3"] = sensors.getTempCByIndex(2);
+  doc["Temperatura4"] = sensors.getTempCByIndex(3);
+  serializeJson(doc, json);
+  server.send(200, "application/json", json);
+}
+
 
 // Leitura do valor da umidade de um sensor DHT22
 void handleDHT222Humidity() {
@@ -129,30 +149,31 @@ void setup(){
   delay(500);
 
   server.on("/", handleRoot); // Exibi a página da web
-  server.on("/readTemperature1", handleDHT221Temperature);  // Solicita o handleDHT22Temperature.
-  server.on("/readHumidity1", handleDHT221Humidity);  // Solicita o handleDHT11Humidity.
-  server.on("/readTemperature2", handleDHT222Temperature);  // Solicita o handleDHT22Temperature.
-  server.on("/readHumidity2", handleDHT222Humidity); // Solicita o handleDHT11Humidity.
-  server.on("/temperaturec1", readDSTemperatureC1); // Solicita o readDSTemperatureC1
-  server.on("/temperaturec2", readDSTemperatureC2); // Solicita o readDSTemperatureC2
-  server.on("/temperaturec3", readDSTemperatureC3); // Solicita o readDSTemperatureC3
-  server.on("/temperaturec4", readDSTemperatureC4); // Solicita o readDSTemperatureC4
+  server.on("/readTemperature1", HTTP_GET,handleDHT221Temperature);  // Solicita o handleDHT22Temperature.
+  server.on("/readHumidity1", HTTP_GET, handleDHT221Humidity);  // Solicita o handleDHT11Humidity.
+  server.on("/readTemperature2", HTTP_GET, handleDHT222Temperature);  // Solicita o handleDHT22Temperature.
+  server.on("/readHumidity2", HTTP_GET, handleDHT222Humidity); // Solicita o handleDHT11Humidity.
+  server.on("/temperaturec1", HTTP_GET,readDSTemperatureC1); // Solicita o readDSTemperatureC1
+  server.on("/temperaturec2", HTTP_GET, readDSTemperatureC2); // Solicita o readDSTemperatureC2
+  server.on("/temperaturec3", HTTP_GET, readDSTemperatureC3); // Solicita o readDSTemperatureC3
+  server.on("/temperaturec4", HTTP_GET, readDSTemperatureC4); // Solicita o readDSTemperatureC4
+  server.on("/api", HTTP_GET, handleapi);
   
 
   server.begin(); // Inicia o WebServer
   Serial.println("Servidor HTTP iniciado.");
   Serial.println(WiFi.softAPIP());
   
+}
 
-}
-void leitura_serial()
-{
-  Serial.print("Sensor 1 - umidade: ");
-  Serial.println(dht.readHumidity());
-  Serial.print("Sensor 2 - umidade: ");
-  Serial.println(dht2.readHumidity());
-  delay(1000);
-}
 void loop(){ 
-  server.handleClient();  // Solicitações do usuário 
+  server.handleClient();  // Solicitações do usuário
+  Serial.println(dht.readHumidity());
+  Serial.println(dht2.readHumidity());
+  Serial.println(sensors.getTempCByIndex(0));
+  Serial.println(sensors.getTempCByIndex(1));
+  Serial.println(sensors.getTempCByIndex(2));
+  Serial.println(sensors.getTempCByIndex(3));
+  Serial.println("---nova leitura --");
+  delay(500);
   }
